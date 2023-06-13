@@ -1,49 +1,71 @@
 package com.udacity.webcrawler;
 
 import com.udacity.webcrawler.json.CrawlResult;
+import com.udacity.webcrawler.parser.PageParserFactory;
 
 import javax.inject.Inject;
-import javax.inject.Provider;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.*;
 import java.util.concurrent.ForkJoinPool;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 /**
  * A concrete implementation of {@link WebCrawler} that runs multiple threads on a
  * {@link ForkJoinPool} to fetch and process multiple web pages in parallel.
  */
 final class ParallelWebCrawler implements WebCrawler {
-  private final Clock clock;
-  private final Duration timeout;
-  private final int popularWordCount;
-  private final ForkJoinPool pool;
+    private final Clock clock;
+    private final Duration timeout;
+    private final int popularWordCount;
+    private final ForkJoinPool pool;
+    private final int maxDepth;
+    private final List<Pattern> ignoredUrls;
 
-  @Inject
-  ParallelWebCrawler(
-      Clock clock,
-      @Timeout Duration timeout,
-      @PopularWordCount int popularWordCount,
-      @TargetParallelism int threadCount) {
-    this.clock = clock;
-    this.timeout = timeout;
-    this.popularWordCount = popularWordCount;
-    this.pool = new ForkJoinPool(Math.min(threadCount, getMaxParallelism()));
-  }
+    @Inject
+    PageParserFactory pageParserFactory;
 
-  @Override
-  public CrawlResult crawl(List<String> startingUrls) {
-    return new CrawlResult.Builder().build();
-  }
+    @Inject
+    ParallelWebCrawler(
+            Clock clock,
+            @Timeout Duration timeout,
+            @PopularWordCount int popularWordCount,
+            @MaxDepth int maxDepth,
+            @TargetParallelism int threadCount,
+            @IgnoredUrls List<Pattern> ignoredUrls
+    ) {
+        this.clock = clock;
+        this.timeout = timeout;
+        this.popularWordCount = popularWordCount;
+        this.maxDepth = maxDepth;
+        this.pool = new ForkJoinPool(Math.min(threadCount, getMaxParallelism()));
+        this.ignoredUrls = ignoredUrls;
+    }
 
-  @Override
-  public int getMaxParallelism() {
-    return Runtime.getRuntime().availableProcessors();
-  }
+    @Override
+    public CrawlResult crawl(List<String> startingUrls) {
+        List<String> urlsVisited = Collections.synchronizedList(new ArrayList<>());
+        Map<String, Integer> wordCounts = Collections.synchronizedMap(new HashMap<>());
+
+        if (startingUrls.isEmpty()) {
+            return new CrawlResult.Builder().build();
+        } else {
+            for (String url : startingUrls) {
+                pool.invoke(new CrawResultTask(url, urlsVisited, wordCounts, maxDepth, pageParserFactory, popularWordCount, ignoredUrls));
+            }
+        }
+
+        if (!wordCounts.isEmpty()) {
+            wordCounts = WordCounts.sort(wordCounts, popularWordCount);
+        }
+
+        return new CrawlResult.Builder().setWordCounts(wordCounts)
+                .setUrlsVisited(urlsVisited.size())
+                .build();
+    }
+
+    @Override
+    public int getMaxParallelism() {
+        return Runtime.getRuntime().availableProcessors();
+    }
 }

@@ -40,11 +40,11 @@ final class ProfilingMethodInterceptor implements InvocationHandler {
             try {
                 return method.invoke( delegate, args );
             } catch ( Exception ex ) {
-                throw new IllegalArgumentException( "The wrapped interface does not contain a @Profiled method." );
+                throw new IllegalArgumentException("expected exception");
             } finally {
                 Instant end = clock.instant();
                 Duration duration = Duration.between( start, end );
-                state.record( Profiled.class, method, duration );
+                state.record( delegate.getClass(), method, duration );
             }
         } else {
             return method.invoke( delegate, args );

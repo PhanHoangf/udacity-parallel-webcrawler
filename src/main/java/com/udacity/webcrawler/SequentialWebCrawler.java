@@ -48,6 +48,9 @@ final class SequentialWebCrawler implements WebCrawler {
     Instant deadline = clock.instant().plus(timeout);
     Map<String, Integer> counts = new HashMap<>();
     Set<String> visitedUrls = new HashSet<>();
+
+
+
     for (String url : startingUrls) {
       crawlInternal(url, deadline, maxDepth, counts, visitedUrls);
     }

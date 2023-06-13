@@ -87,5 +87,11 @@ public final class CrawlResult {
     public CrawlResult build() {
       return new CrawlResult(Collections.unmodifiableMap(wordFrequencies), pageCount);
     }
+
+
+  }
+
+  public static CrawlResult create(int urlVisited, Map<String, Integer> wordCounts) {
+    return new CrawlResult(wordCounts, urlVisited);
   }
 }
