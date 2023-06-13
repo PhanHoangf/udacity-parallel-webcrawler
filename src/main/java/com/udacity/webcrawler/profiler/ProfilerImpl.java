@@ -7,6 +7,7 @@ import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.Objects;
 
 import static java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME;
@@ -27,20 +28,22 @@ final class ProfilerImpl implements Profiler {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T wrap (Class<T> klass, T delegate) {
         Objects.requireNonNull( klass );
+        boolean hasProfiledMethod = Arrays.stream(klass.getMethods())
+                .anyMatch(method -> method.getAnnotation(Profiled.class) != null);
 
+        if (!hasProfiledMethod) {
+            throw new IllegalArgumentException("The wrapped interface does not contain a @Profiled method.");
+        }
         // TODO: Use a dynamic proxy (java.lang.reflect.Proxy) to "wrap" the delegate in a
         //       ProfilingMethodInterceptor and return a dynamic proxy from this method.
         //       See https://docs.oracle.com/javase/10/docs/api/java/lang/reflect/Proxy.html.
-
-        Class<T> proxyInstance = (Class<T>) Proxy.newProxyInstance(
+        return (T) Proxy.newProxyInstance(
                 klass.getClassLoader(),
                 new Class[]{ klass },
-                new ProfilingMethodInterceptor( clock ) );
-
-        return proxyInstance.cast( proxyInstance );
-//        return delegate;
+                new ProfilingMethodInterceptor( clock, delegate, state ) );
     }
 
     @Override
