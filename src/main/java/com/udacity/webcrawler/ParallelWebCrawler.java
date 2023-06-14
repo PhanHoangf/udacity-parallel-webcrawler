@@ -7,10 +7,7 @@ import javax.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
@@ -29,7 +26,7 @@ final class ParallelWebCrawler implements WebCrawler {
     PageParserFactory pageParserFactory;
 
     @Inject
-    ParallelWebCrawler (
+    ParallelWebCrawler(
             Clock clock,
             @Timeout Duration timeout,
             @PopularWordCount int popularWordCount,
@@ -41,45 +38,43 @@ final class ParallelWebCrawler implements WebCrawler {
         this.timeout = timeout;
         this.popularWordCount = popularWordCount;
         this.maxDepth = maxDepth;
-        this.pool = new ForkJoinPool( Math.min( threadCount, getMaxParallelism() ) );
+        this.pool = new ForkJoinPool(Math.min(threadCount, getMaxParallelism()));
         this.ignoredUrls = ignoredUrls;
     }
 
     @Override
-    public CrawlResult crawl (List<String> startingUrls) {
-        List<String> urlsVisited = Collections.synchronizedList( new ArrayList<>() );
-        Map<String, Integer> wordCounts = Collections.synchronizedMap( new HashMap<>() );
-        if ( startingUrls.isEmpty() ) {
+    public CrawlResult crawl(List<String> startingUrls) {
+        Set<String> urlsVisited = Collections.synchronizedSet(new HashSet<>());
+        Map<String, Integer> wordCounts = Collections.synchronizedMap(new HashMap<>());
+        if (startingUrls.isEmpty()) {
             return new CrawlResult.Builder().build();
         } else {
-            for ( String url : startingUrls ) {
-                CrawResultTask task = new CrawResultTask.Builder().setUrl( url )
-                        .setUrlsVisited( urlsVisited )
-                        .setWordCounts( wordCounts )
-                        .setDepth( maxDepth )
-                        .setPageParserFactory( pageParserFactory )
-                        .setPopularWordCount( popularWordCount )
-                        .setIgnoredUrls( ignoredUrls )
-                        .setTimeOut( timeout )
+            for (String url : startingUrls) {
+                CrawResultTask task = new CrawResultTask.Builder().setUrl(url)
+                        .setUrlsVisited(urlsVisited)
+                        .setWordCounts(wordCounts)
+                        .setDepth(maxDepth)
+                        .setPageParserFactory(pageParserFactory)
+                        .setPopularWordCount(popularWordCount)
+                        .setIgnoredUrls(ignoredUrls)
+                        .setTimeOut(timeout)
                         .build();
-                pool.invoke( task );
+                pool.invoke(task);
             }
         }
 
 
-
-
-        if ( !wordCounts.isEmpty() ) {
-            wordCounts = WordCounts.sort( wordCounts, popularWordCount );
+        if (!wordCounts.isEmpty()) {
+            wordCounts = WordCounts.sort(wordCounts, popularWordCount);
         }
 
-        return new CrawlResult.Builder().setWordCounts( wordCounts )
-                .setUrlsVisited( urlsVisited.size() )
+        return new CrawlResult.Builder().setWordCounts(wordCounts)
+                .setUrlsVisited(urlsVisited.size())
                 .build();
     }
 
     @Override
-    public int getMaxParallelism () {
+    public int getMaxParallelism() {
         return Runtime.getRuntime().availableProcessors();
     }
 }

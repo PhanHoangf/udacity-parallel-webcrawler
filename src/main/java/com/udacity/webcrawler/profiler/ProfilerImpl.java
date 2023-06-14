@@ -51,9 +51,7 @@ final class ProfilerImpl implements Profiler {
 
     @Override
     public void writeData(Path path) throws IOException {
-        System.out.println("HERE");
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardOpenOption.APPEND)) {
-            System.out.println("HERE1");
             state.write(writer);
             writer.newLine();
         } catch (IOException e) {

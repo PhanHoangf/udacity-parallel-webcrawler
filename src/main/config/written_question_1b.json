@@ -5,6 +5,5 @@
   "maxDepth": 10,
   "timeoutSeconds": 7,
   "popularWordCount": 5,
-  "profileOutputPath": "profileData.txt",
-  "parallelism": 4
+  "profileOutputPath": "profileData.txt"
 }
