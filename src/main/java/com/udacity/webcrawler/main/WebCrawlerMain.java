@@ -69,6 +69,8 @@ public final class WebCrawlerMain {
                 throw new IOException( ex.getMessage() );
             }
         }
+        System.out.println();
+
         profiler.writeData( writer );
         writer.close();
     }
