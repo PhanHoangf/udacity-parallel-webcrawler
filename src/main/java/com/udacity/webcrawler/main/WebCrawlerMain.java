@@ -53,25 +53,24 @@ public final class WebCrawlerMain {
             }
         }
         resultWriter.write( writer );
-        writer.close();
 
         // TODO: Write the profile data to a text file (or System.out if the file name is empty)
         String profileOutputPath = config.getProfileOutputPath();
-        Writer profileWriter = null;
         File file = new File( profileOutputPath );
 
+        Path output = Path.of( profileOutputPath );
         if ( profileOutputPath.isEmpty() ) {
-            profileWriter = new OutputStreamWriter( System.out );
+            writer = new OutputStreamWriter( System.out );
         } else {
             try {
                 StandardOpenOption option = file.exists() ? StandardOpenOption.APPEND : StandardOpenOption.CREATE;
-                profileWriter = Files.newBufferedWriter( Path.of( profileOutputPath ), option );
+                writer = Files.newBufferedWriter( output, option );
             } catch ( IOException ex ) {
                 throw new IOException( ex.getMessage() );
             }
         }
-        profiler.writeData( profileWriter );
-        profileWriter.close();
+        profiler.writeData( writer );
+        writer.close();
     }
 
     public static void main (String[] args) throws Exception {

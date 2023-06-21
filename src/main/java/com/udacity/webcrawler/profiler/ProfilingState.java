@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  * Helper class that records method performance data from the method interceptor.
  */
 final class ProfilingState {
-  private final Map<String, Duration> data = new ConcurrentHashMap<>();
+  public final Map<String, Duration> data = new ConcurrentHashMap<>();
 
   /**
    * Records the given method invocation data.
